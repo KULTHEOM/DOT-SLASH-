@@ -1,0 +1,28 @@
+# Ignore all log files
+*.log
+
+# Ignore temporary files
+temp/
+*.tmp
+
+# Ignore compiled files
+*.class
+*.o
+*.exe
+
+# Ignore environment files
+.env
+
+# Ignore IDE specific files
+.idea/
+.vscode/
+
+# Ignore model files
+contrastive_model.pth
+svm_model.pkl
+
+# Ignore environment directory
+env/
+
+# Ignore CSV files
+features.csv

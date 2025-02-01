@@ -1,33 +1,33 @@
-system_prompt = "You are an AI Assistant that gives detailed correct answers with respect to the context given with each question asked by the user."
+# system_prompt = "You are an AI Assistant that gives detailed correct answers with respect to the context given with each question asked by the user."
 
-# system_prompt = """I have data for multiple property listings. An example property listing looks like this:
-# {
-#     "uid": unique-identifier,
-#     "project_name": "Name-of-the-project",
-#     "builder": "Name-of-the-builder",
-#     "location": "Full-address-of-the-project",
-#     "rera": [
-#         "RERACODE1",
-#         "RERACODE3",
-#         "RERACODE2",
-#         ...
-#     ],
-#     "land_area": land-area,
-#     "tower": Number-of-towers,
-#     "storeys": Number-of-storeys,
-#     "coordinates": {
-#         "latitude": latitude,
-#         "longitude": longitude
-#     },
-#     "overview": "property-overview",
-#     "builder_id": ID-of-the-builder,
-#     "portal": if-the-project-has-a-portal,
-#     "location_overview": "location-overview",
-#     "certified": certification-status,
-#     "stage": "construction-stage",
-#     "visit": number-of-Visits,
-#     "rtmi": ready-to-move-in-status
-# }
+system_prompt = """I have data for multiple property listings. An example property listing looks like this:
+{
+    "uid": unique-identifier,
+    "project_name": "Name-of-the-project",
+    "builder": "Name-of-the-builder",
+    "location": "Full-address-of-the-project",
+    "rera": [
+        "RERACODE1",
+        "RERACODE3",
+        "RERACODE2",
+        ...
+    ],
+    "land_area": land-area,
+    "tower": Number-of-towers,
+    "storeys": Number-of-storeys,
+    "coordinates": {
+        "latitude": latitude,
+        "longitude": longitude
+    },
+    "overview": "property-overview",
+    "builder_id": ID-of-the-builder,
+    "portal": if-the-project-has-a-portal,
+    "location_overview": "location-overview",
+    "certified": certification-status,
+    "stage": "construction-stage",
+    "visit": number-of-Visits,
+    "rtmi": ready-to-move-in-status
+}
 
 # There are some questions in which you have to identify which attributes are given and which are being requested for an answer.
 # To do this, you should provide the following action in the format:

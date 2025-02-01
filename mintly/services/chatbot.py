@@ -34,7 +34,7 @@ class ChatModel(ChatChain):
         self.chatChain.chain.append(human_message)
 
         response = ''
-        response = self.client.chat.completions.create(model="meta-llama/Meta-Llama-3-8B-Instruct",
+        response = self.client.chat.completions.create(model="deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
                                                         messages=self.chatChain.chain,
                                                         stream=True,
                                                         max_tokens=512,
@@ -52,5 +52,5 @@ class ChatModel(ChatChain):
         return 
 
 
-class mintly(ChatModel):
-    def __init__(self)
+# class mintly(ChatModel):
+#     def __init__(self)

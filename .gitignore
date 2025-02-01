@@ -20,7 +20,8 @@ temp/
 # Ignore model files
 contrastive_model.pth
 svm_model.pkl
-
+nn_model_reliance.pth
+nn_model_infosys.pth
 # Ignore environment directory
 env/
 

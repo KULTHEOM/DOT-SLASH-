@@ -74,9 +74,9 @@ class ChatModel(ChatChain):
             output += text  # Append to output string
             print(chunk.choices[0].delta.content, end='', flush=True)  # Print without new line
         improved_llm_response = self.extract_until_first_action(output)
-        print("\n\n-------------------------------------------------\n\n")
+        # print("\n\n-------------------------------------------------\n\n")
         print(improved_llm_response)
-        print("\n\n-------------------------------------------------\n\n")
+        # print("\n\n-------------------------------------------------\n\n")
         ai_message = self.tokenize("assistant", improved_llm_response)
         self.chatChain.chain.append(ai_message)
         return improved_llm_response

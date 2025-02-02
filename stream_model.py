@@ -255,7 +255,40 @@ def suggest_trading_strategy(user_risk_tolerance, folder_path):
         "matching_files": matching_files_info
     }
 
-# Generate a simulated large dictionary (replace with actual data as needed)
+# Function to display sentiment data for a given ticker
+def display_sentiment_data(ticker, time_index):
+    folder_path = 'sentiment_data_csv'
+    
+    # Get all CSV files in the directory that match the ticker
+    files = [f for f in os.listdir(folder_path) if f.endswith(f'{ticker}.csv')]
+    
+    if not files:
+        return f"No sentiment data found for ticker: {ticker}"
+    
+    # For now, we'll display the first matching file (you can show all if needed)
+    file_path = os.path.join(folder_path, files[0])
+    sentiment_df = pd.read_csv(file_path)
+    
+    # Select news corresponding to the time interval
+    news_at_time = sentiment_df.iloc[time_index:time_index+1]  # Adjust to display news for the interval
+    
+    # Prepare news content for display
+    news_content = ""
+    for _, row in news_at_time.iterrows():
+        description = row['Description']
+        sentiment = row['Sentiment']
+        
+        # Custom box style for displaying news with better text color
+        news_content += f"""
+            <div style="background-color:#f1f1f1; padding:10px; border-radius:5px; border:1px solid #ccc;">
+                <p style="color:#333;"><strong>News:</strong> {description}</p>
+                <p style="color:#333;"><strong>Sentiment:</strong> {sentiment}</p>
+            </div>
+        """
+    
+    return news_content
+
+# Load data for predictions and dates
 detail = pd.read_csv(r"C:\Users\Ajay\Desktop\DOT-SLASH-\dates.csv")
 prediction_data = pd.read_csv(r"C:\Users\Ajay\Desktop\DOT-SLASH-\predictions.csv")
 
@@ -286,17 +319,17 @@ st.markdown(f"<h5 style='text-align: right; color: gray;'>{fixed_date}</h5>", un
 # Create a sidebar for user inputs
 st.sidebar.header('Stock Query')
 ticker_input = st.sidebar.text_input("Enter Stock Ticker", "INFOSYS")
-st.sidebar.write("This tool displays real-time stock data.")
+st.sidebar.write("This tool displays real-time stock data and sentiment analysis.")
 
 # Portfolio Risk Tolerance Calculation
 st.sidebar.header('Portfolio Risk Tolerance')
-portfolio_file_path = st.sidebar.text_input("Enter Portfolio CSV File Path", r"DC:\Users\Ajay\Desktop\DOT-SLASH-\stock_transactions.csv")
+portfolio_file_path = r"C:\Users\Ajay\Desktop\DOT-SLASH-\stock_transactions.csv"  # Direct file path
 if st.sidebar.button("Calculate Risk Tolerance"):
     risk_tolerance = calculate_risk_tolerance(portfolio_file_path)
     st.sidebar.write(f"Your Risk Tolerance: *{risk_tolerance}*")
 
     # Suggest Trading Strategy
-    folder_path = r"DC:\Users\Ajay\Desktop\DOT-SLASH"  # Path to your folder containing CSV files
+    folder_path = r"C:\Users\Ajay\Desktop\DOT-SLASH-\dataset_stock_forecast"  # Path to your folder containing CSV files
     trading_suggestion = suggest_trading_strategy(risk_tolerance, folder_path)
 
     if "error" in trading_suggestion:
@@ -307,11 +340,13 @@ if st.sidebar.button("Calculate Risk Tolerance"):
         for file_info in trading_suggestion['matching_files']:
             st.sidebar.write(f"Filename: {file_info['filename']}, Features: {file_info['features']}")
 
-# Initialize variables for plot
+# Initialize variables for news and plot
+news_placeholder = st.empty()
 chart_placeholder = st.empty()
 
 # Stream data to the plot with a 1-second delay (real-time effect)
 i = 0
+time_interval = 0  # To keep track of news updates (every 1 minute)
 
 while i < len(datetime_data):
     # Update the traces with new data for the plot
@@ -342,7 +377,16 @@ while i < len(datetime_data):
         showlegend=True
     )
     
-    # Display the updated plot
+    # Display news above the header every minute
+    if i % 60 == 0:  # Update news every 1 minute
+        if ticker_input:
+            news_content = display_sentiment_data(ticker_input.upper(), time_interval)  # Show news for the current interval
+            
+            if news_content:
+                news_placeholder.markdown(news_content, unsafe_allow_html=True)
+            time_interval += 1  # Increment for the next news update
+
+    # Display the updated plot below the news content
     chart_placeholder.plotly_chart(fig, use_container_width=True)
     
     # Simulate a 1-second delay for real-time streaming effect

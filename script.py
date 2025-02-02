@@ -61,7 +61,7 @@ def find_ticker_based_on_stop_loss(query, directory):
     return selected_ticker
 
 # Example usage
-query = "Set a stop loss of 2% and search for the best ticker."
+query = "give me the analysis of tcs which has stop loss of 15%"
 directory = r"D:\DOT SLASH\tickercsv"  # Replace with the actual directory path
 result = find_ticker_based_on_stop_loss(query, directory)
 print(result)

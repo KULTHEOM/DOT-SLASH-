@@ -1,7 +1,7 @@
 import pandas as pd
 
 RELI_data_path = r'dataset/RELI_dataset.csv'
-INFOSYS_data_path = r'dataset/INFOSYS_dataset.csv'
+INFY_data_path = r'dataset/INFY_dataset.csv'
 AAPL_data_path = r'dataset/AAPL_dataset.csv'
 
 def get_last_week_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -85,12 +85,12 @@ def get_data(label: str, start_date: str | None, end_date: str | None) -> pd.Dat
     """
     if label == 'RELI':
         df = pd.read_csv(RELI_data_path, index_col=0)
-    elif label == 'INFOSYS':
-        df = pd.read_csv(INFOSYS_data_path, index_col=0)
+    elif label == 'INFY':
+        df = pd.read_csv(INFY_data_path, index_col=0)
     elif label == 'AAPL':
         df = pd.read_csv(AAPL_data_path, index_col=0)
     else:
-        raise ValueError("Invalid label. Valid labels are 'RELI', 'INFOSYS', and 'AAPL'.")
+        raise ValueError("Invalid label. Valid labels are 'RELI', 'INFY', and 'AAPL'.")
 
     # if start_date and end_date:
     #     print("Filtering by date range...")

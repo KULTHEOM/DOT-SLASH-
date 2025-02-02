@@ -74,6 +74,9 @@ class ChatModel(ChatChain):
             output += text  # Append to output string
             print(chunk.choices[0].delta.content, end='', flush=True)  # Print without new line
         improved_llm_response = self.extract_until_first_action(output)
+        print("\n\n-------------------------------------------------\n\n")
+        print(improved_llm_response)
+        print("\n\n-------------------------------------------------\n\n")
         ai_message = self.tokenize("assistant", improved_llm_response)
         self.chatChain.chain.append(ai_message)
         return improved_llm_response
@@ -85,33 +88,39 @@ class mintly(ChatModel):
         Parse the LLM response into a dictionary or string.
 
         Args:
-            llm_response (str): The response from LLM.
+            improved_llm_response (str): The response from LLM.
 
         Returns:
-            dict | str: If the action is 'predict', return a dictionary with the 'action' key as 'predict' and the parsed JSON data.
-                        If the action is 'finish', return a dictionary with the 'action' key as 'finish' and the string data.
+            dict | str: If the action is 'predict', return a dictionary with 'action' key as 'prediction' and extracted data.
+                        If the action is 'finish', return a dictionary with 'action' key as 'finish' and the string data.
                         If the input is invalid JSON format, return a string "Invalid JSON format".
         """
-        if "search[" in improved_llm_response:
-            
+        if "predict[" in improved_llm_response:
             match = re.search(r"predict\[\s*(\{.*?\})\s*\]", improved_llm_response, re.DOTALL)
             if match:
-                
                 try:
-                    input_data = json.loads(match.group(1))
-                    return {"action": "predict", "data": input_data}
+                    # Fix invalid JSON: Replace `{NULL}` with `null`
+                    fixed_json = match.group(1).replace("{NULL}", "null")
+                    input_data = json.loads(fixed_json)
+
+                    return {
+                        "action": "prediction",
+                        "data": {
+                            "labels": input_data["given"].get("ticker", []),
+                            "time_period": input_data["given"].get("time_frame")
+                        }
+                    }
                 except json.JSONDecodeError:
                     return "Invalid JSON format"
 
         elif "finish[" in improved_llm_response:
-            
             match = re.search(r"finish\[\s*(.*?)\s*\]", improved_llm_response, re.DOTALL)
             if match:
-                finish_data = match.group(1)
-                return {"action": "finish", "data": finish_data}
+                return {"action": "finish", "data": match.group(1)}
 
-        
-        return "Invalid action format"
+        return {"action": "error", "data": "Invalid Format"}
+
+
     
     def get_relevant_data_tool(self, parsed_data: dict):
         """
@@ -123,14 +132,14 @@ class mintly(ChatModel):
         Returns:
             str: A string of relevant data.
         """
-        data =[]
-        if parsed_data.get("action") == "predict":
-            labels = parsed_data.get('data')
+        data = []
+        if parsed_data.get("action") == "prediction":
+            labels = parsed_data.get("data", {}).get("labels", [])
             if labels is not None:
                 data, percentage_change = getPrediction(labels)##dict
             
             indicator = "The percentage change in the stock price is over the duration is :" + str(percentage_change) + "%."
-            return indicator, data
+            return indicator
         
         elif parsed_data.get("action") == "finish":
                 data = parsed_data.get("data")
@@ -161,7 +170,7 @@ class mintly(ChatModel):
             llm_response = self.invoke(self._question(msg))
         
         action = self.parse_llm_response(llm_response)
-        _, indicator = self.get_relevant_data_tool(action)#This can be either search action data from the api or a finish action response.
+        indicator = self.get_relevant_data_tool(action)#This can be either search action data from the api or a finish action response.
         
         return indicator
 

@@ -3,7 +3,7 @@
 system_prompt = """I have time-series data for a stock listing. An example stock listing for a certain label looks like this:
 
 {
-  "ticker": "INFY",
+  "label": "INFY",
   "data": {
     "uid": "1",
     "datetime": "2025-01-02 04:00:00",
@@ -32,7 +32,7 @@ To do this, you should provide the following action in the format:
 ## Action
 predict[{
     "given": {
-        "ticker": [<ticker1>, <ticker2>, ...], 
+        "label": [<label>, <label>, ...], 
         "time_frame": {NULL}
     },
     required: ["prediction"]
@@ -49,6 +49,7 @@ Now, I want the whole process in the following format:
 ## Thought: <your-thoughts-and-action-plan-based-on-my-question-and-observation-i-provided>
 ## Action: <either-search-action-or-finish-action-in-the-format-i-provided>
 ## Observation: <whatever-observation-I-WILL-PROVIDE>
+## Thought: <your-thoughts-and-action-plan-based-on-observation-i-provided>
 ## Action: <either-search-action-or-finish-action-in-the-format-i-provided>
 ... until the action is finish.
 

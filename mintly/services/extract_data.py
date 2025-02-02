@@ -1,43 +1,105 @@
 import pandas as pd
 
-RELI_data = r'dataset/RELI_dataset.csv'
-INFOSYS_data = r'dataset/INFOSYS_dataset.csv'
-AAPL_data = r'dataset/AAPL_dataset.csv'
+RELI_data_path = r'dataset/RELI_dataset.csv'
+INFOSYS_data_path = r'dataset/INFOSYS_dataset.csv'
+AAPL_data_path = r'dataset/AAPL_dataset.csv'
 
-def get_last_week_data(label: str) -> pd.DataFrame:
-    
+def get_last_week_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Get data for the specified label for the last 7 days.
-    This function reads data from a CSV file corresponding to the given label,
-    renames the datetime column, converts it to datetime format, and filters
-    the data to include only the entries from the last 7 days.
-        label (str): The label of the data to fetch. Valid labels are "RELI", "INFOSYS", and "AAPL".
-        pd.DataFrame: A DataFrame containing the data for the given label from the last 7 days.
-    Raises:
-        ValueError: If the provided label is not one of the valid labels.
+    Extracts the last 7 days of data from the given DataFrame.
 
+    Steps:
+    - Renames the datetime column.
+    - Converts the datetime column to a proper format.
+    - Filters data for the last 7 days.
+    - Drops unnecessary columns.
+
+    Returns:
+    - A DataFrame containing data from the last 7 days.
     """
-    if label == "RELI":
-        csv = pd.read_csv(RELI_data, index_col=0)
-    elif label == "INFOSYS":
-        csv = pd.read_csv(INFOSYS_data, index_col=0)
-    elif label == "AAPL":
-        csv = pd.read_csv(AAPL_data, index_col=0)
-    else:
-        raise ValueError("Invalid label")
-    
+    # Rename datetime column and strip spaces from column names
+    df.columns = df.columns.str.strip()
+    df = df.rename(columns={"datetime": "Datetime"})
 
-    # Rename the datetime column
-    date_column = csv.columns[0]
-    csv = csv.rename(columns={date_column: "datetime"})
+    # Convert Datetime column to datetime format
+    df["Datetime"] = pd.to_datetime(df["Datetime"], errors="coerce")
 
-    # Convert to datetime format
-    csv["datetime"] = pd.to_datetime(csv["datetime"], errors="coerce")
+    # Determine the last available date in the dataset
+    max_date = df["Datetime"].max()
 
-    # Filter data for the last 7 days
-    last_7_days = csv[csv["datetime"] >= (csv["datetime"].max() - pd.Timedelta(days=7))]
-    last_7_days.drop(['datetime','%Change','RRR'], axis=1, inplace=True)
-    # Display the filtered data
+    # Filter data for the last 7 days from the latest available date
+    last_7_days = df[df["Datetime"] >= (max_date - pd.Timedelta(days=7))]
+
+    # Drop unwanted columns
+    last_7_days = last_7_days.drop(columns=["%Change", "RRR"], errors="ignore")
+
     return last_7_days
-    
 
+# def filter_by_date_only(df: pd.DataFrame, start_date: str, end_date: str) -> pd.DataFrame:
+#     """
+#     Filters the dataset based on the given start and end dates (ignoring time).
+
+#     Parameters:
+#     - df (pd.DataFrame): The dataset containing a datetime column.
+#     - start_date (str): Start date in 'YYYY-MM-DD' format.
+#     - end_date (str): End date in 'YYYY-MM-DD' format.
+
+#     Returns:
+#     - DataFrame: Filtered entries within the date range.
+#     """
+
+#     # Ensure column names are properly formatted
+#     df.columns = df.columns.str.strip()
+
+#     # Rename datetime column if necessary
+#     if "datetime" in df.columns:
+#         df = df.rename(columns={"datetime": "Datetime"})
+
+#     # Convert Datetime column to proper datetime format (ensuring no time component)
+#     df["Datetime"] = pd.to_datetime(df["Datetime"], errors='coerce').dt.date
+
+#     # Convert start_date and end_date to date format (ensuring no time component)
+#     start_date = pd.to_datetime(start_date, errors='coerce').date()
+#     end_date = pd.to_datetime(end_date, errors='coerce').date()
+
+#     print(f"Filtering from {start_date} to {end_date}")
+
+#     # Apply filtering based on dates (not datetime)
+#     filtered_df = df[(df["Datetime"] >= start_date) & (df["Datetime"] <= end_date)]
+
+#     # Drop unwanted columns safely
+#     filtered_df = filtered_df.drop(columns=["%Change", "RRR"], errors="ignore")
+#     filtered_df.to_csv("filtered_data.csv")
+#     return filtered_df
+
+def get_data(label: str, start_date: str | None, end_date: str | None) -> pd.DataFrame:
+    """
+    Get data for the specified label within the specified date range.
+    If no date range is provided, the function returns the data for the last 7 days.
+    Parameters:
+    - label (str): The label of the data to fetch. Valid labels are "RELI", "INFOSYS", and "AAPL".
+    - start_date (str): The start date of the date range in 'YYYY-MM-DD' format.
+    - end_date (str): The end date of the date range in 'YYYY-MM-DD' format.
+    Returns:
+    - DataFrame: A DataFrame containing the data for the given label within the specified date range.
+    """
+    if label == 'RELI':
+        df = pd.read_csv(RELI_data_path, index_col=0)
+    elif label == 'INFOSYS':
+        df = pd.read_csv(INFOSYS_data_path, index_col=0)
+    elif label == 'AAPL':
+        df = pd.read_csv(AAPL_data_path, index_col=0)
+    else:
+        raise ValueError("Invalid label. Valid labels are 'RELI', 'INFOSYS', and 'AAPL'.")
+
+    # if start_date and end_date:
+    #     print("Filtering by date range...")
+    #     print("Start Date:", start_date)
+    #     print("End Date:", end_date)
+    #     return filter_by_date_only(df=df, start_date=start_date, end_date=end_date)
+    
+    return get_last_week_data(df=df)
+    
+    
+    
+    

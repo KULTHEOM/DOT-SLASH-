@@ -1,7 +1,10 @@
 from prompts import system_prompt
 from huggingface_hub import InferenceClient
 from clients.llm import *
-
+import re
+import json
+from typing import Any
+from clients.prediction_model import getPrediction
 
 class ChatChain:
     def __init__(self, chain):
@@ -28,13 +31,37 @@ class ChatModel(ChatChain):
         template = {"role" : f"{self.role}", "content" : f"{self.msg}"}
         return template
 
+    def extract_until_first_action(self, llm_response: str):
+   
+        """
+        Extracts the portion of the text from the beginning until the first '## Action:' tag and the following tag.
+
+        Args:
+            text (str): The input text to extract from.
+
+        Returns:
+            str: The extracted portion of the text. If '## Action:' or a subsequent tag is not found, 
+            returns the entire text.
+        """
+        action_index = llm_response.find("## Action:")
+        
+        if action_index == -1:
+            return llm_response
+        
+        next_tag_index = llm_response.find("##", action_index + len("## Action:"))
+        
+        if next_tag_index == -1:
+            return llm_response
+        
+        return llm_response[:next_tag_index]
+
     def invoke(self, msg, stream=False):
 
         human_message = self.tokenize("user", msg)
         self.chatChain.chain.append(human_message)
 
         response = ''
-        response = self.client.chat.completions.create(model="deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+        response = self.client.chat.completions.create(model='meta-llama/Meta-Llama-3-8B-Instruct',
                                                         messages=self.chatChain.chain,
                                                         stream=True,
                                                         max_tokens=512,
@@ -46,11 +73,101 @@ class ChatModel(ChatChain):
             text = chunk.choices[0].delta.content  # Extract token
             output += text  # Append to output string
             print(chunk.choices[0].delta.content, end='', flush=True)  # Print without new line
-
-        ai_message = self.tokenize("assistant", output)
+        improved_llm_response = self.extract_until_first_action(output)
+        ai_message = self.tokenize("assistant", improved_llm_response)
         self.chatChain.chain.append(ai_message)
-        return 
+        return improved_llm_response
 
 
-# class mintly(ChatModel):
-#     def __init__(self)
+class mintly(ChatModel):
+    def parse_llm_response(self, improved_llm_response: str) -> dict | str:
+        """
+        Parse the LLM response into a dictionary or string.
+
+        Args:
+            llm_response (str): The response from LLM.
+
+        Returns:
+            dict | str: If the action is 'predict', return a dictionary with the 'action' key as 'predict' and the parsed JSON data.
+                        If the action is 'finish', return a dictionary with the 'action' key as 'finish' and the string data.
+                        If the input is invalid JSON format, return a string "Invalid JSON format".
+        """
+        if "search[" in improved_llm_response:
+            
+            match = re.search(r"predict\[\s*(\{.*?\})\s*\]", improved_llm_response, re.DOTALL)
+            if match:
+                
+                try:
+                    input_data = json.loads(match.group(1))
+                    return {"action": "predict", "data": input_data}
+                except json.JSONDecodeError:
+                    return "Invalid JSON format"
+
+        elif "finish[" in improved_llm_response:
+            
+            match = re.search(r"finish\[\s*(.*?)\s*\]", improved_llm_response, re.DOTALL)
+            if match:
+                finish_data = match.group(1)
+                return {"action": "finish", "data": finish_data}
+
+        
+        return "Invalid action format"
+    
+    def get_relevant_data_tool(self, parsed_data: dict):
+        """
+        Get relevant data from parsed data.
+
+        Args:
+            parsed_data (dict): A dictionary of parsed data from the LLM response.
+
+        Returns:
+            str: A string of relevant data.
+        """
+        data =[]
+        if parsed_data.get("action") == "predict":
+            labels = parsed_data.get('data')
+            if labels is not None:
+                data, percentage_change = getPrediction(labels)##dict
+            
+            indicator = "The percentage change in the stock price is over the duration is :" + str(percentage_change) + "%."
+            return indicator, data
+        
+        elif parsed_data.get("action") == "finish":
+                data = parsed_data.get("data")
+        
+        else:
+            return "Invalid Format"
+            
+
+    def _question(self, msg: str) -> str:
+        return "## Question: "+ msg
+
+    def _observation(self, msg: str) -> str:
+        return "## Observation: \n"+ msg + "\n"
+
+    def identify_msg_type(self, input_string: str) -> str:
+
+        trimmed_string = input_string.strip()
+        if trimmed_string.startswith('[') and trimmed_string.endswith(']'):
+            return "Observation"
+
+        return "Question"
+
+    def Agent(self, msg: str) -> Any:
+        
+        if self.identify_msg_type(msg) == "Observation":
+            llm_response = self.invoke(self._observation(msg))
+        else:
+            llm_response = self.invoke(self._question(msg))
+        
+        action = self.parse_llm_response(llm_response)
+        _, indicator = self.get_relevant_data_tool(action)#This can be either search action data from the api or a finish action response.
+        
+        return indicator
+
+    def chat(self, query: str) -> str:
+        result = self.Agent(query)
+        if self.identify_msg_type(result) == "Observation":
+            result = self.Agent(result)
+        
+        return result

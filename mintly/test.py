@@ -120,6 +120,12 @@ mintly = mintly(chatChain=chatChain)
 
 output = mintly.chat("Can you give me analysis for Infosys in real time?")
 print(output)
-print(chatChain.chain)
+
+# print(chatChain.chain)
+# ind = 1
+# for i in range(1, len(chatChain.chain)):
+#     print(chatChain.chain[i])
+#     print("\n\n")
+
 
 

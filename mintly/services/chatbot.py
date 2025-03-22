@@ -1,5 +1,4 @@
 from prompts import system_prompt
-from huggingface_hub import InferenceClient
 from clients.llm import *
 import re
 import json
@@ -21,7 +20,7 @@ class ChatChain:
 
 class ChatModel(ChatChain):
     def __init__(self, chatChain : ChatChain):
-        self.client = getInferenceClient()
+        self.completion = getCompletion()
         self.model = getModel()
         self.chatChain = chatChain
    
@@ -61,22 +60,18 @@ class ChatModel(ChatChain):
         self.chatChain.chain.append(human_message)
 
         response = ''
-        response = self.client.chat.completions.create(model='meta-llama/Meta-Llama-3-8B-Instruct',
-                                                        messages=self.chatChain.chain,
-                                                        stream=True,
-                                                        max_tokens=512,
-                                                    )
+        response = self.completion(model=self.model,
+                                    messages=self.chatChain.chain,
+                                                )
         
-        output = ''
+        output = response.choices[0].message.content
         
-        for chunk in response:
-            text = chunk.choices[0].delta.content  # Extract token
-            output += text  # Append to output string
-            print(chunk.choices[0].delta.content, end='', flush=True)  # Print without new line
+        # for chunk in response:
+        #     text = chunk.choices[0].delta.content  # Extract token
+        #     output += text  # Append to output string
+        #     print(chunk.choices[0].delta.content, end='', flush=True)  # Print without new line
         improved_llm_response = self.extract_until_first_action(output)
-        # print("\n\n-------------------------------------------------\n\n")
-        print(improved_llm_response)
-        # print("\n\n-------------------------------------------------\n\n")
+        # print(improved_llm_response)
         ai_message = self.tokenize("assistant", improved_llm_response)
         self.chatChain.chain.append(ai_message)
         return improved_llm_response

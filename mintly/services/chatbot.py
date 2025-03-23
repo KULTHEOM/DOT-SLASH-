@@ -65,7 +65,7 @@ class ChatModel(ChatChain):
                                                 )
         
         output = response.choices[0].message.content
-        
+        # print(output)
         # for chunk in response:
         #     text = chunk.choices[0].delta.content  # Extract token
         #     output += text  # Append to output string
@@ -78,6 +78,7 @@ class ChatModel(ChatChain):
 
 
 class mintly(ChatModel):
+
     def parse_llm_response(self, improved_llm_response: str) -> dict | str:
         """
         Parse the LLM response into a dictionary or string.
@@ -90,6 +91,8 @@ class mintly(ChatModel):
                         If the action is 'finish', return a dictionary with 'action' key as 'finish' and the string data.
                         If the input is invalid JSON format, return a string "Invalid JSON format".
         """
+
+        #for prediction service.
         if "predict[" in improved_llm_response:
             match = re.search(r"predict\[\s*(\{.*?\})\s*\]", improved_llm_response, re.DOTALL)
             if match:
@@ -107,6 +110,7 @@ class mintly(ChatModel):
                     }
                 except json.JSONDecodeError:
                     return "Invalid JSON format"
+
 
         elif "finish[" in improved_llm_response:
             match = re.search(r"finish\[\s*(.*?)\s*\]", improved_llm_response, re.DOTALL)
@@ -127,17 +131,18 @@ class mintly(ChatModel):
         Returns:
             str: A string of relevant data.
         """
-        data = []
+        # data = [] 
         if parsed_data.get("action") == "prediction":
             labels = parsed_data.get("data", {}).get("labels", [])
             if labels is not None:
-                data, percentage_change = getPrediction(labels)##dict
+                _, percentage_change = getPrediction(labels)##dict
             
-            indicator = "The percentage change in the stock price is over the duration is :" + str(percentage_change) + "%."
+            indicator = "[The percentage change in the stock price is over the duration is " + str(percentage_change) + "%.]"
             return indicator
         
         elif parsed_data.get("action") == "finish":
                 data = parsed_data.get("data")
+                return data
         
         else:
             return "Invalid Format"
